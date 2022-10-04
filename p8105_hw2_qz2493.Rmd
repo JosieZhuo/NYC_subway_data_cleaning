@@ -4,27 +4,31 @@ author: "Qingyue Zhuo qz2493"
 date: "2022-10-03"
 output: html_document
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# load the packages
+```{r}
+library(tidyverse)
+library(dplyr)
 ```
 
-## R Markdown
+# Problem 1- include ada notes or not?- are these data tidy?-how to reformat the data?
+```{r}
+subway_data = 
+  read_csv("data/Subway.csv") %>%
+  janitor::clean_names() %>%
+  select(line:entry, vending, ada) %>%
+  mutate(
+    entry = recode(entry, 'YES' = '1', 'NO' = '0'))
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+subway_distinct = distinct(subway_data, line, station_name, .keep_all = TRUE)
+ada_compliant = filter(subway_distinct, ada == 'TRUE')
+entry_without_vending = filter(subway_distinct, entry == "1", vending == "NO")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
 ```
+The dataset contains the following variables:`r names(subway_data)`. I used janitor::clean_names to do the basic cleaning. The dimension of the dataset is `r nrow(subway_data)`*`r ncol(subway_data)`. These data are tidy.
 
-## Including Plots
+There are `r nrow(subway_distinct)` stations. `r nrow(ada_compliant)` stations are ADA. `r 100*(nrow(entry_without_vending)/nrow(subway_distinct))`% of station entrances without vending allow entrance.
 
-You can also embed plots, for example:
+# Problem 2
+# Problem 3
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
