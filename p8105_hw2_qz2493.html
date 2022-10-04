@@ -372,45 +372,310 @@ pre code {
 
 <div id="load-the-packages" class="section level1">
 <h1>load the packages</h1>
-<pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
-## ✔ ggplot2 3.3.6      ✔ purrr   0.3.4 
-## ✔ tibble  3.1.8      ✔ dplyr   1.0.10
-## ✔ tidyr   1.2.0      ✔ stringr 1.4.1 
-## ✔ readr   2.1.2      ✔ forcats 0.5.2 
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()</code></pre>
-<pre class="r"><code>library(dplyr)</code></pre>
+<pre class="r"><code>library(tidyverse)
+library(readxl)
+library(dplyr)
+library(lubridate)</code></pre>
 </div>
-<div id="problem-1--include-ada-notes-or-not--are-these-data-tidy" class="section level1">
-<h1>Problem 1- include ada notes or not?- are these data tidy?</h1>
+<div id="problem-1" class="section level1">
+<h1>Problem 1</h1>
 <pre class="r"><code>subway_data = 
-  read_csv(&quot;data/Subway.csv&quot;) %&gt;%
+  read_csv(
+    &quot;data/Subway.csv&quot;, 
+    col_types = cols(Route8 = &quot;c&quot;, Route9 = &quot;c&quot;, Route10 = &quot;c&quot;, Route11 = &quot;c&quot;)) %&gt;%
   janitor::clean_names() %&gt;%
-  select(line:entry, vending, ada) %&gt;%
-  mutate(
-    entry = recode(entry, &#39;YES&#39; = &#39;1&#39;, &#39;NO&#39; = &#39;0&#39;))</code></pre>
-<pre><code>## Rows: 1868 Columns: 32
-## ── Column specification ────────────────────────────────────────────────────────
-## Delimiter: &quot;,&quot;
-## chr (22): Division, Line, Station Name, Route1, Route2, Route3, Route4, Rout...
-## dbl  (8): Station Latitude, Station Longitude, Route8, Route9, Route10, Rout...
-## lgl  (2): ADA, Free Crossover
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>subway_distinct = distinct(subway_data, line, station_name, .keep_all = TRUE)
-ada_compliant = filter(subway_distinct, ada == &#39;TRUE&#39;)
-entry_without_vending = filter(subway_distinct, entry == &quot;1&quot;, vending == &quot;NO&quot;)</code></pre>
+  select(
+    line, station_name, station_latitude, station_longitude, 
+    starts_with(&quot;route&quot;), entry, exit_only, vending, entrance_type, 
+    ada) %&gt;%
+  mutate(entry = ifelse(entry == &quot;YES&quot;, TRUE, FALSE))</code></pre>
 <p>The dataset contains the following variables:line, station_name,
 station_latitude, station_longitude, route1, route2, route3, route4,
-route5, route6, route7, route8, route9, route10, route11, entrance_type,
-entry, vending, ada. I used janitor::clean_names to do the basic
-cleaning. The dimension of the dataset is 1868*19. These data are
-tidy.</p>
-<p>There are 465 stations. 84 stations are ADA. 1.0752688% of station
-entrances without vending allow entrance.</p>
+route5, route6, route7, route8, route9, route10, route11, entry,
+exit_only, vending, entrance_type, ada. I used janitor::clean_names to
+do the basic cleaning. The dimension of the dataset is 1868*20. These
+data are not “tidy”: route number should be a variable, as should
+route..</p>
+<pre class="r"><code>subway_distinct = distinct(subway_data, line, station_name, .keep_all = TRUE)</code></pre>
+<p>There are 465 stations.</p>
+<pre class="r"><code>ada_compliant = filter(subway_distinct, ada == &#39;TRUE&#39;)
+entry_without_vending = 
+  filter(subway_distinct, vending == &quot;NO&quot;) %&gt;%
+  pull(entry) %&gt;% 
+  mean</code></pre>
+<p>84 stations are ADA. % of station entrances without vending allow
+entrance.</p>
+<p>Lastly, we write a code chunk to identify stations that serve the A
+train, and to assess how many of these are ADA compliant. As a first
+step, we tidy the data as alluded to previously; that is, we convert
+<code>route</code> from wide to long format. After this step, we can use
+tools from previous parts of the question (filtering to focus on the A
+train, and on ADA compliance; selecting and using <code>distinct</code>
+to obtain dataframes with the required stations in rows).</p>
+<pre class="r"><code>subway_data %&gt;% 
+  pivot_longer(
+    route1:route11,
+    names_to = &quot;route_num&quot;,
+    values_to = &quot;route&quot;) %&gt;% 
+  filter(route == &quot;A&quot;) %&gt;% 
+  select(station_name, line) %&gt;% 
+  distinct
+## # A tibble: 60 × 2
+##    station_name                  line           
+##    &lt;chr&gt;                         &lt;chr&gt;          
+##  1 Times Square                  42nd St Shuttle
+##  2 125th St                      8 Avenue       
+##  3 145th St                      8 Avenue       
+##  4 14th St                       8 Avenue       
+##  5 168th St - Washington Heights 8 Avenue       
+##  6 175th St                      8 Avenue       
+##  7 181st St                      8 Avenue       
+##  8 190th St                      8 Avenue       
+##  9 34th St                       8 Avenue       
+## 10 42nd St                       8 Avenue       
+## # … with 50 more rows
+
+subway_data %&gt;% 
+  pivot_longer(
+    route1:route11,
+    names_to = &quot;route_num&quot;,
+    values_to = &quot;route&quot;) %&gt;% 
+  filter(route == &quot;A&quot;, ada == TRUE) %&gt;% 
+  select(station_name, line) %&gt;% 
+  distinct
+## # A tibble: 17 × 2
+##    station_name                  line            
+##    &lt;chr&gt;                         &lt;chr&gt;           
+##  1 14th St                       8 Avenue        
+##  2 168th St - Washington Heights 8 Avenue        
+##  3 175th St                      8 Avenue        
+##  4 34th St                       8 Avenue        
+##  5 42nd St                       8 Avenue        
+##  6 59th St                       8 Avenue        
+##  7 Inwood - 207th St             8 Avenue        
+##  8 West 4th St                   8 Avenue        
+##  9 World Trade Center            8 Avenue        
+## 10 Times Square-42nd St          Broadway        
+## 11 59th St-Columbus Circle       Broadway-7th Ave
+## 12 Times Square                  Broadway-7th Ave
+## 13 8th Av                        Canarsie        
+## 14 Franklin Av                   Franklin        
+## 15 Euclid Av                     Fulton          
+## 16 Franklin Av                   Fulton          
+## 17 Howard Beach                  Rockaway</code></pre>
+</div>
+<div id="problem-2" class="section level1">
+<h1>Problem 2</h1>
+</div>
+<div id="read-and-clean-the-mr.-trash-wheel-sheet" class="section level1">
+<h1>Read and clean the Mr. Trash Wheel sheet</h1>
+<pre class="r"><code>trash_data = 
+  read_excel(&quot;data/trash.xlsx&quot;, sheet = 1, range = cell_cols(&quot;A:N&quot;),  skip = 1) %&gt;%
+  janitor::clean_names() %&gt;%
+  drop_na(dumpster) %&gt;%
+  drop_na(month) %&gt;%
+  mutate(
+    sports_balls = as.integer(round(sports_balls))
+  )
+
+trash_data
+## # A tibble: 547 × 14
+##    dumpster month year  date                weight_tons volume…¹ plast…² polys…³
+##       &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; &lt;dttm&gt;                    &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+##  1        1 May   2014  2014-05-16 00:00:00        4.31       18    1450    1820
+##  2        2 May   2014  2014-05-16 00:00:00        2.74       13    1120    1030
+##  3        3 May   2014  2014-05-16 00:00:00        3.45       15    2450    3100
+##  4        4 May   2014  2014-05-17 00:00:00        3.1        15    2380    2730
+##  5        5 May   2014  2014-05-17 00:00:00        4.06       18     980     870
+##  6        6 May   2014  2014-05-20 00:00:00        2.71       13    1430    2140
+##  7        7 May   2014  2014-05-21 00:00:00        1.91        8     910    1090
+##  8        8 May   2014  2014-05-28 00:00:00        3.7        16    3580    4310
+##  9        9 June  2014  2014-06-05 00:00:00        2.52       14    2400    2790
+## 10       10 June  2014  2014-06-11 00:00:00        3.76       18    1340    1730
+## # … with 537 more rows, 6 more variables: cigarette_butts &lt;dbl&gt;,
+## #   glass_bottles &lt;dbl&gt;, grocery_bags &lt;dbl&gt;, chip_bags &lt;dbl&gt;,
+## #   sports_balls &lt;int&gt;, homes_powered &lt;dbl&gt;, and abbreviated variable names
+## #   ¹​volume_cubic_yards, ²​plastic_bottles, ³​polystyrene</code></pre>
+</div>
+<div id="read-and-clean-the-professor-trash-wheel-sheet" class="section level1">
+<h1>Read and clean the Professor Trash Wheel sheet</h1>
+<pre class="r"><code>professor_data = 
+  read_excel(&quot;data/trash.xlsx&quot;, sheet = 2, range = cell_cols(&quot;A:M&quot;)) %&gt;%
+  janitor::clean_names() %&gt;%
+  drop_na() 
+
+professor_data
+## # A tibble: 82 × 13
+##    dumpster month     year date                weight_…¹ volum…² plast…³ polys…⁴
+##       &lt;dbl&gt; &lt;chr&gt;    &lt;dbl&gt; &lt;dttm&gt;                  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+##  1        1 January   2017 2017-01-02 00:00:00      1.79      15    1950    6080
+##  2        2 January   2017 2017-01-30 00:00:00      1.58      15    9540   11230
+##  3        3 February  2017 2017-02-26 00:00:00      2.32      18    8350    9210
+##  4        4 February  2017 2017-02-26 00:00:00      3.72      15    8590    1030
+##  5        5 February  2017 2017-02-28 00:00:00      1.45      15    7830    9950
+##  6        6 March     2017 2017-03-30 00:00:00      1.71      15    8210   10340
+##  7        7 April     2017 2017-04-01 00:00:00      1.82      15    9830   11020
+##  8        8 April     2017 2017-04-20 00:00:00      2.37      15    9240    8760
+##  9        9 May       2017 2017-05-10 00:00:00      2.64      15    9540    8810
+## 10       10 May       2017 2017-05-26 00:00:00      2.78      15    8230    7800
+## # … with 72 more rows, 5 more variables: cigarette_butts &lt;dbl&gt;,
+## #   glass_bottles &lt;dbl&gt;, grocery_bags &lt;dbl&gt;, chip_bags &lt;dbl&gt;,
+## #   homes_powered &lt;dbl&gt;, and abbreviated variable names ¹​weight_tons,
+## #   ²​volume_cubic_yards, ³​plastic_bottles, ⁴​polystyrene</code></pre>
+<p>#Combine two tables</p>
+<pre class="r"><code>combine_data = 
+  left_join(trash_data, professor_data, by = &quot;date&quot;) </code></pre>
+</div>
+<div id="problem-3-president-taking-values-gop-and-dem" class="section level1">
+<h1>Problem 3-president taking values gop and dem</h1>
+</div>
+<div id="clean-and-organize-pols-month-dataset" class="section level1">
+<h1>clean and organize pols-month dataset</h1>
+<pre class="r"><code>pols_data = 
+  read_csv(&quot;data/pols-month.csv&quot;) %&gt;%
+  janitor::clean_names() %&gt;%
+  separate(mon, into = c(&quot;year&quot;,&quot;month&quot;,&quot;day&quot;), sep = &quot;-&quot;) %&gt;%
+  mutate(
+    year = as.integer(year),
+    month = as.integer(month),
+    day = as.integer(day),
+    month = month.name[month]) %&gt;%
+  select(-day) %&gt;%
+  relocate(year, month, prez_gop, prez_dem) %&gt;%
+  mutate(
+    prez_gop = na_if(prez_gop, 0),
+    prez_dem = na_if(prez_dem, 0)) %&gt;%
+  pivot_longer(
+    prez_gop:prez_dem,
+    names_to = &quot;name&quot;,
+    names_prefix = &quot;prez_&quot;,
+    values_to = &quot;president&quot;) %&gt;%
+  drop_na() %&gt;%
+  select(-president) %&gt;%
+  rename(president = name) %&gt;%
+  select(year, month, president, everything())
+
+pols_data
+## # A tibble: 822 × 9
+##     year month     president gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem
+##    &lt;int&gt; &lt;chr&gt;     &lt;chr&gt;       &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+##  1  1947 January   dem            23      51     253      23      45     198
+##  2  1947 February  dem            23      51     253      23      45     198
+##  3  1947 March     dem            23      51     253      23      45     198
+##  4  1947 April     dem            23      51     253      23      45     198
+##  5  1947 May       dem            23      51     253      23      45     198
+##  6  1947 June      dem            23      51     253      23      45     198
+##  7  1947 July      dem            23      51     253      23      45     198
+##  8  1947 August    dem            23      51     253      23      45     198
+##  9  1947 September dem            23      51     253      23      45     198
+## 10  1947 October   dem            23      51     253      23      45     198
+## # … with 812 more rows</code></pre>
+<p>#clean and organize snp data set</p>
+<pre class="r"><code>snp_data = 
+  read_csv(&quot;data/snp.csv&quot;) %&gt;%
+  janitor::clean_names() %&gt;%
+  mutate(
+    month = month(mdy(date)),
+    year = year(mdy(date)),
+    year = ifelse(year &gt;= 2050, year - 100, year)) %&gt;%
+  select(year, month, close) %&gt;%
+  mutate(
+    month = month.name[month]) %&gt;%
+  arrange(year, month)
+
+snp_data
+## # A tibble: 787 × 3
+##     year month    close
+##    &lt;dbl&gt; &lt;chr&gt;    &lt;dbl&gt;
+##  1  1950 April     18.0
+##  2  1950 August    18.4
+##  3  1950 December  20.4
+##  4  1950 February  17.2
+##  5  1950 January   17.0
+##  6  1950 July      17.8
+##  7  1950 June      17.7
+##  8  1950 March     17.3
+##  9  1950 May       18.8
+## 10  1950 November  19.5
+## # … with 777 more rows</code></pre>
+</div>
+<div id="clean-and-organize-unemployment-data" class="section level1">
+<h1>clean and organize unemployment data</h1>
+<pre class="r"><code>unemploy_data = 
+  read_csv(&quot;data/unemployment.csv&quot;) %&gt;%
+  janitor::clean_names() %&gt;%
+  pivot_longer(
+    jan:dec,
+    names_to = &#39;month&#39;,
+    values_to = &#39;unemployment&#39;) %&gt;%
+  mutate(
+    month = recode(month, &quot;jan&quot; = 1, &quot;feb&quot; = 2, &quot;mar&quot; = 3, &quot;apr&quot; = 4, &quot;may&quot; = 5, &quot;jun&quot; = 6, &quot;jul&quot; = 7, &quot;aug&quot; = 8, &quot;sep&quot; = 9, &quot;oct&quot; = 10, &quot;nov&quot; = 11, &quot;dec&quot; = 12),
+    month = month.name[month]
+  )
+
+unemploy_data
+## # A tibble: 816 × 3
+##     year month     unemployment
+##    &lt;dbl&gt; &lt;chr&gt;            &lt;dbl&gt;
+##  1  1948 January            3.4
+##  2  1948 February           3.8
+##  3  1948 March              4  
+##  4  1948 April              3.9
+##  5  1948 May                3.5
+##  6  1948 June               3.6
+##  7  1948 July               3.6
+##  8  1948 August             3.9
+##  9  1948 September          3.8
+## 10  1948 October            3.7
+## # … with 806 more rows</code></pre>
+<p>#combine the data set</p>
+<pre class="r"><code>pols_snp =
+  left_join(pols_data, snp_data, by = c(&quot;year&quot;, &quot;month&quot;))
+pols_snp_unemploy = 
+  left_join(pols_snp, unemploy_data, by = c(&quot;year&quot;, &quot;month&quot;)) %&gt;%
+  arrange(year, month)
+
+pols_snp_unemploy
+## # A tibble: 822 × 11
+##     year month    presid…¹ gov_gop sen_gop rep_gop gov_dem sen_dem rep_dem close
+##    &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;
+##  1  1947 April    dem           23      51     253      23      45     198    NA
+##  2  1947 August   dem           23      51     253      23      45     198    NA
+##  3  1947 December dem           24      51     253      23      45     198    NA
+##  4  1947 February dem           23      51     253      23      45     198    NA
+##  5  1947 January  dem           23      51     253      23      45     198    NA
+##  6  1947 July     dem           23      51     253      23      45     198    NA
+##  7  1947 June     dem           23      51     253      23      45     198    NA
+##  8  1947 March    dem           23      51     253      23      45     198    NA
+##  9  1947 May      dem           23      51     253      23      45     198    NA
+## 10  1947 November dem           24      51     253      23      45     198    NA
+## # … with 812 more rows, 1 more variable: unemployment &lt;dbl&gt;, and abbreviated
+## #   variable name ¹​president</code></pre>
+<p>Write a short paragraph about these datasets. Explain briefly what
+each dataset contained, and describe the resulting dataset (e.g. give
+the dimension, range of years, and names of key variables).</p>
+<div id="pols-month-dataset-has-822-observtions-of-9-variables.-it-contains-the-number-of-presidents-who-are-democratic-or-republican-at-certain-given-time.-for-example-at-a-given-month-and-year-whether-the-president-belongs-to-democratic-or-republican-party-and-the-number-of-republican-or-democratic-governors-senators-and-representatives." class="section level2">
+<h2>Pols-month dataset has 822 observtions of 9 variables. It contains
+the number of presidents who are democratic or republican at certain
+given time. For example, at a given month and year, whether the
+president belongs to democratic or republican party, and the number of
+republican or democratic governors, senators and representatives.</h2>
+</div>
+<div id="snp-dataset-has-787-observations-of-9-variables.-it-introduces-the-standard-poors-stock-market-index-which-shows-the-closing-values-of-the-sp-stock-index-on-the-associate-date." class="section level2">
+<h2>Snp dataset has 787 observations of 9 variables. It introduces the
+Standard &amp; Poor’s stock market index, which shows the closing values
+of the S&amp;P stock index on the associate date.</h2>
+</div>
+<div id="unemployment-dataset-has-816-observations-of-3-variables.-it-reveals-the-percentage-of-unemployment-at-a-given-month-and-year." class="section level2">
+<h2>Unemployment dataset has 816 observations of 3 variables. It reveals
+the percentage of unemployment at a given month and year.</h2>
+</div>
+<div id="the-resulting-data-set-has-822-observations-of-11-variables.-year-range-is-1947-to-2015-and-the-key-variables-are-year-month-president-gov_gop-sen_gop-rep_gop-gov_dem-sen_dem-rep_dem-close-unemployment." class="section level2">
+<h2>The resulting data set has 822 observations of 11 variables. Year
+range is 1947 to 2015, and the key variables are year, month, president,
+gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem, close,
+unemployment.</h2>
+</div>
 </div>
 
 
