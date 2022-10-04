@@ -81,7 +81,6 @@ trash_data =
   mutate(
     sports_balls = as.integer(round(sports_balls))
   )
-
 trash_data
 ```
 
@@ -95,12 +94,18 @@ professor_data =
 professor_data
 ```
 
-#Combine two tables
+#Combine two dataset
 ```{r}
 combine_data = 
-  left_join(trash_data, professor_data, by = "date") 
+  left_join(trash_data, professor_data, by = "date")
+combine_data
 ```
 
+## The trash_wheel data set has `r nrow(trash_data)` observations of `r ncol(trash_data)` variables. The key variables are `r names(trash_data)`. The total number of sports balls collected by Mr. Trash Wheel in 2020 is `r sum(pull(trash_data,sports_balls, year == 2020))` `r sum(pull(filter(trash_data, year == 2020), sports_balls))`.
+
+## The professor trash wheel data set has `r nrow(professor_data)` observations of `r ncol(professor_data)` variables. The key variables are `r names(professor_data)`. The total weight of trash collected by Professor Trash Wheel is `r sum(pull(professor_data, weight_tons))` tons.
+
+## The combined data set has `r nrow(combine_data)` observations of `r ncol(combine_data)` variables. 
 
 # Problem 3-president taking values gop and dem
 # clean and organize pols-month dataset
