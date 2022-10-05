@@ -71,13 +71,12 @@ trans_ent %>%
 ```
 
 # Problem 2
-## Read and clean the Mr. Trash Wheel sheet
+## Read and clean the Mr. Trash Wheel dataset
 ```{r}
 trash_data = 
   read_excel("data/trash.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N"), skip = 1) %>%
   janitor::clean_names() %>%
   drop_na(dumpster) %>%
-  drop_na(month) %>%
   mutate(
     sports_balls = as.integer(round(sports_balls)),
     trash_name = "Mr.",
@@ -86,7 +85,7 @@ trash_data =
 trash_data
 ```
 
-## Read and clean the Professor Trash Wheel sheet
+## Read and clean the Professor Trash Wheel dataset
 ```{r}
 professor_data = 
   read_excel("data/trash.xlsx", sheet = "Professor Trash Wheel", range = cell_cols("A:M"), skip = 1) %>%
@@ -99,7 +98,7 @@ professor_data =
 professor_data
 ```
 
-## Combine two dataset
+## Combine two datasets
 ```{r}
 combine_data = 
   bind_rows(trash_data, professor_data)
@@ -114,7 +113,7 @@ combine_data
 ## The combined data set has `r nrow(combine_data)` observations of `r ncol(combine_data)` variables. 
 
 # Problem 3
-## clean and organize pols-month dataset
+## Clean and organize pols-month dataset
 ```{r}
 pols_data = 
   read_csv("data/pols-month.csv") %>%
@@ -143,7 +142,7 @@ pols_data =
 pols_data
 ```
 
-## clean and organize snp data set
+## Clean and organize snp dataset
 ```{r}
 snp_data = 
   read_csv("data/snp.csv") %>%
@@ -161,7 +160,7 @@ snp_data
  
 ```
 
-## clean and organize unemployment data
+## Clean and organize unemployment dataset
 ```{r}
 unemploy_data = 
   read_csv("data/unemployment.csv") %>%
@@ -178,7 +177,7 @@ unemploy_data =
 unemploy_data
 ```
 
-## combine the data set
+## Combine the datasets
 ```{r}
 pols_snp =
   left_join(pols_data, snp_data, by = c("year", "month"))
