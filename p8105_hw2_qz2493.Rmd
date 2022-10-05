@@ -74,12 +74,14 @@ trans_ent %>%
 # Read and clean the Mr. Trash Wheel sheet
 ```{r}
 trash_data = 
-  read_excel("data/trash.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N"),  skip = 1) %>%
+  read_excel("data/trash.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N"), skip = 1) %>%
   janitor::clean_names() %>%
   drop_na(dumpster) %>%
   drop_na(month) %>%
   mutate(
-    sports_balls = as.integer(round(sports_balls))
+    sports_balls = as.integer(round(sports_balls)),
+    trash_name = "Mr.",
+    year = as.integer(year)
   )
 trash_data
 ```
@@ -89,7 +91,10 @@ trash_data
 professor_data = 
   read_excel("data/trash.xlsx", sheet = "Professor Trash Wheel", range = cell_cols("A:M"), skip = 1) %>%
   janitor::clean_names() %>%
-  drop_na() 
+  drop_na(dumpster) %>%
+  mutate(
+    trash_name = "prof"
+  )
 
 professor_data
 ```
@@ -97,7 +102,8 @@ professor_data
 #Combine two dataset
 ```{r}
 combine_data = 
-  left_join(trash_data, professor_data, by = "date")
+  bind_rows(trash_data, professor_data)
+  
 combine_data
 ```
 
@@ -176,14 +182,13 @@ unemploy_data
 ```{r}
 pols_snp =
   left_join(pols_data, snp_data, by = c("year", "month"))
+
 pols_snp_unemploy = 
   left_join(pols_snp, unemploy_data, by = c("year", "month")) %>%
   arrange(year, month)
 
 pols_snp_unemploy
 ```
-
-Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables).
 
 ## Pols-month dataset has `r nrow(pols_data)` observtions of `r ncol(pols_data)` variables. It contains the number of presidents who are democratic or republican at certain given time. For example, at a given month and year, whether the president belongs to democratic or republican party, and the number of republican or democratic governors, senators and representatives.
 
