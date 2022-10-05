@@ -2,7 +2,7 @@
 title: "p8105_hw2_qz2493.Rmd"
 author: "Qingyue Zhuo qz2493"
 date: "2022-10-03"
-output: html_document
+output: github_document
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
@@ -74,7 +74,7 @@ trans_ent %>%
 # Read and clean the Mr. Trash Wheel sheet
 ```{r}
 trash_data = 
-  read_excel("data/trash.xlsx", sheet = 1, range = cell_cols("A:N"),  skip = 1) %>%
+  read_excel("data/trash.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N"),  skip = 1) %>%
   janitor::clean_names() %>%
   drop_na(dumpster) %>%
   drop_na(month) %>%
@@ -87,7 +87,7 @@ trash_data
 # Read and clean the Professor Trash Wheel sheet
 ```{r}
 professor_data = 
-  read_excel("data/trash.xlsx", sheet = 2, range = cell_cols("A:M")) %>%
+  read_excel("data/trash.xlsx", sheet = "Professor Trash Wheel", range = cell_cols("A:M"), skip = 1) %>%
   janitor::clean_names() %>%
   drop_na() 
 
@@ -101,7 +101,7 @@ combine_data =
 combine_data
 ```
 
-## The trash_wheel data set has `r nrow(trash_data)` observations of `r ncol(trash_data)` variables. The key variables are `r names(trash_data)`. The total number of sports balls collected by Mr. Trash Wheel in 2020 is `r sum(pull(trash_data,sports_balls, year == 2020))` `r sum(pull(filter(trash_data, year == 2020), sports_balls))`.
+## The trash_wheel data set has `r nrow(trash_data)` observations of `r ncol(trash_data)` variables. The key variables are `r names(trash_data)`. The total number of sports balls collected by Mr. Trash Wheel in 2020 is `r sum(pull(filter(trash_data, year == 2020), sports_balls))`.
 
 ## The professor trash wheel data set has `r nrow(professor_data)` observations of `r ncol(professor_data)` variables. The key variables are `r names(professor_data)`. The total weight of trash collected by Professor Trash Wheel is `r sum(pull(professor_data, weight_tons))` tons.
 
